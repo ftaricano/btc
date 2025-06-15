@@ -12,8 +12,14 @@ from dotenv import load_dotenv
 
 class BTCAnalyzer:
     def __init__(self):
-        # Inicializa o cliente Binance (sem chaves de API para dados públicos)
-        self.client = Client()
+        # Inicializa o cliente Binance usando apenas a API pública
+        self.client = Client(
+            tld='com',  # Força o uso do domínio .com
+            requests_params={
+                'timeout': 30,  # Timeout de 30 segundos
+                'verify': True  # Verifica SSL
+            }
+        )
         self.symbol = "BTCUSDT"
         self.timeframes = {
             "1h": Client.KLINE_INTERVAL_1HOUR,
@@ -24,8 +30,9 @@ class BTCAnalyzer:
     def get_current_price(self):
         """Obtém o preço atual do BTC/USDT"""
         try:
-            ticker = self.client.get_symbol_ticker(symbol=self.symbol)
-            return float(ticker['price'])
+            # Usa o endpoint público de ticker
+            ticker = self.client.get_ticker(symbol=self.symbol)
+            return float(ticker['lastPrice'])
         except BinanceAPIException as e:
             print(f"Erro ao obter preço atual: {e}")
             return None
@@ -33,6 +40,7 @@ class BTCAnalyzer:
     def get_klines(self, timeframe, limit=100):
         """Obtém os candles para um timeframe específico"""
         try:
+            # Usa o endpoint público de klines
             klines = self.client.get_klines(
                 symbol=self.symbol,
                 interval=self.timeframes[timeframe],
@@ -58,6 +66,7 @@ class BTCAnalyzer:
     def get_order_book(self, limit=10):
         """Obtém o livro de ordens"""
         try:
+            # Usa o endpoint público de depth
             depth = self.client.get_order_book(symbol=self.symbol, limit=limit)
             return {
                 'bids': depth['bids'][:limit],
