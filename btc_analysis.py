@@ -12,12 +12,12 @@ from dotenv import load_dotenv
 
 class BTCAnalyzer:
     def __init__(self):
-        # Inicializa o cliente Binance usando apenas a API pública
+        # Inicializa o cliente Binance.US
         self.client = Client(
-            tld='com',  # Força o uso do domínio .com
+            tld='us',  # Usa o domínio .us
             requests_params={
-                'timeout': 30,  # Timeout de 30 segundos
-                'verify': True  # Verifica SSL
+                'timeout': 30,
+                'verify': True
             }
         )
         self.symbol = "BTCUSDT"
@@ -30,23 +30,50 @@ class BTCAnalyzer:
     def get_current_price(self):
         """Obtém o preço atual do BTC/USDT"""
         try:
-            # Usa o endpoint público de ticker
+            # Tenta primeiro com Binance.US
             ticker = self.client.get_ticker(symbol=self.symbol)
             return float(ticker['lastPrice'])
         except BinanceAPIException as e:
-            print(f"Erro ao obter preço atual: {e}")
-            return None
+            try:
+                # Se falhar, tenta com a API pública da Binance.com
+                response = requests.get(f'https://api.binance.com/api/v3/ticker/price?symbol={self.symbol}')
+                if response.status_code == 200:
+                    return float(response.json()['price'])
+                raise Exception("Falha ao obter preço")
+            except Exception as e:
+                print(f"Erro ao obter preço atual: {e}")
+                return None
 
     def get_klines(self, timeframe, limit=100):
         """Obtém os candles para um timeframe específico"""
         try:
-            # Usa o endpoint público de klines
+            # Tenta primeiro com Binance.US
             klines = self.client.get_klines(
                 symbol=self.symbol,
                 interval=self.timeframes[timeframe],
                 limit=limit
             )
-            
+        except BinanceAPIException:
+            try:
+                # Se falhar, tenta com a API pública da Binance.com
+                interval = self.timeframes[timeframe]
+                response = requests.get(
+                    f'https://api.binance.com/api/v3/klines',
+                    params={
+                        'symbol': self.symbol,
+                        'interval': interval,
+                        'limit': limit
+                    }
+                )
+                if response.status_code == 200:
+                    klines = response.json()
+                else:
+                    raise Exception("Falha ao obter candles")
+            except Exception as e:
+                print(f"Erro ao obter candles: {e}")
+                return None
+        
+        try:
             df = pd.DataFrame(klines, columns=[
                 'timestamp', 'open', 'high', 'low', 'close', 'volume',
                 'close_time', 'quote_volume', 'trades', 'taker_buy_base',
@@ -59,22 +86,37 @@ class BTCAnalyzer:
                 df[col] = df[col].astype(float)
                 
             return df
-        except BinanceAPIException as e:
-            print(f"Erro ao obter candles: {e}")
+        except Exception as e:
+            print(f"Erro ao processar dados dos candles: {e}")
             return None
 
     def get_order_book(self, limit=10):
         """Obtém o livro de ordens"""
         try:
-            # Usa o endpoint público de depth
+            # Tenta primeiro com Binance.US
             depth = self.client.get_order_book(symbol=self.symbol, limit=limit)
-            return {
-                'bids': depth['bids'][:limit],
-                'asks': depth['asks'][:limit]
-            }
-        except BinanceAPIException as e:
-            print(f"Erro ao obter livro de ordens: {e}")
-            return None
+        except BinanceAPIException:
+            try:
+                # Se falhar, tenta com a API pública da Binance.com
+                response = requests.get(
+                    f'https://api.binance.com/api/v3/depth',
+                    params={
+                        'symbol': self.symbol,
+                        'limit': limit
+                    }
+                )
+                if response.status_code == 200:
+                    depth = response.json()
+                else:
+                    raise Exception("Falha ao obter livro de ordens")
+            except Exception as e:
+                print(f"Erro ao obter livro de ordens: {e}")
+                return None
+        
+        return {
+            'bids': depth['bids'][:limit],
+            'asks': depth['asks'][:limit]
+        }
 
     def calculate_volume_indicators(self, df):
         """Calcula indicadores de volume"""
