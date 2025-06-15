@@ -5,11 +5,18 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
 
+# Configuração da página
 st.set_page_config(
     page_title="Análise Técnica BTC/USDT",
     page_icon="📈",
     layout="wide"
 )
+
+# Cache para a análise
+@st.cache_data(ttl=300)  # Cache por 5 minutos
+def get_analysis():
+    analyzer = BTCAnalyzer()
+    return analyzer.run_analysis()
 
 # Título e descrição
 st.title("📈 Análise Técnica BTC/USDT")
@@ -21,12 +28,13 @@ Os dados são atualizados em tempo real e podem ser copiados para uso em outras 
 # Botão para atualizar análise
 if st.button("🔄 Atualizar Análise"):
     with st.spinner("Realizando análise..."):
-        analyzer = BTCAnalyzer()
-        results = analyzer.run_analysis()
-        
-        # Salva os resultados na sessão
-        st.session_state.results = results
-        st.session_state.last_update = datetime.now()
+        try:
+            results = get_analysis()
+            st.session_state.results = results
+            st.session_state.last_update = datetime.now()
+            st.success("Análise atualizada com sucesso!")
+        except Exception as e:
+            st.error(f"Erro ao atualizar análise: {str(e)}")
 
 # Exibe última atualização
 if 'last_update' in st.session_state:
