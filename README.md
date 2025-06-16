@@ -1,193 +1,240 @@
-# Coletor de Dados de Mercado - Binance Futures
+# BTC Market Data Collector
 
-Este projeto implementa um coletor de dados de mercado para a Binance Futures, fornecendo uma ampla gama de métricas e indicadores técnicos.
+Sistema robusto para coleta de dados de mercado do Bitcoin (BTCUSDT) da Binance Futures em tempo real.
 
 ## 🚀 Funcionalidades
 
-- Coleta de dados em tempo real da Binance Futures
-- **🔥 Liquidações em tempo real via WebSocket** (sem necessidade de API key)
-- Suporte a fallback para Binance.US quando necessário
-- Cálculo de indicadores técnicos (SMA, EMA, RSI, MACD, Bollinger Bands, ATR)
-- Análise de profundidade do order book expandida (até ±2%)
-- Métricas de derivativos (Open Interest, Funding Rate)
-- CVD (Cumulative Volume Delta) para Perpetual e Spot
-- Estatísticas de volume
-- Suporte a múltiplos timeframes (15m, 1h, 4h, 1d)
+### **Dados Coletados:**
+- **MARKET**: Preço atual (markPrice)
+- **ORDER_BOOK**: Top 20 níveis + profundidade percentual (0.5%, 1%, 2%)
+- **CANDLES**: 50 candles para múltiplos timeframes (15m, 1h, 4h, 1d)
+- **INDICADORES**: SMA, EMA, RSI, MACD, Bollinger Bands, ATR
+- **DERIVATIVOS**: Open Interest, variação OI 4h, funding rate
+- **VOLUME**: Volume 24h, taker buy/sell volumes
+- **LIQUIDAÇÕES**: WebSocket tempo real de liquidações Long/Short 24h
+- **FLOW (CVD)**: Cumulative Volume Delta para Perpetual e Spot
 
-## 📋 Pré-requisitos
+### **Características Técnicas:**
+- ✅ WebSocket tempo real para liquidações (~50ms latency)
+- ✅ Rate limiting com backoff exponencial
+- ✅ Fallbacks inteligentes para APIs
+- ✅ Saída JSON padronizada
+- ✅ Logs detalhados
+- ✅ Tratamento robusto de erros
 
-- Python 3.10+
-- TA-Lib (biblioteca C)
-- Dependências Python listadas em `requirements.txt`
+## 📱 **NOVO: Acesso pelo Celular**
 
-## 🔧 Instalação
+### **Opção 1: Interface Web (Recomendada)**
 
-1. Clone o repositório:
+1. **No computador:**
+   ```bash
+   # Descobrir IP local
+   python get_ip.py
+   
+   # Iniciar servidor web
+   python web_collector.py
+   ```
+
+2. **No celular:**
+   - Conecte na mesma rede WiFi
+   - Acesse: `http://SEU-IP:8080`
+   - Clique em "📊 Coletar Dados"
+   - Use "📋 Copiar JSON" para copiar os dados
+
+### **Opção 2: Termux (Android)**
+
+1. **Instalar Termux:**
+   ```bash
+   # No Termux
+   pkg update && pkg upgrade
+   pkg install python git
+   pip install -r requirements.txt
+   ```
+
+2. **Executar:**
+   ```bash
+   python run_collector.py
+   cat market_data_*.json | termux-clipboard-set
+   ```
+
+## 💻 Instalação (Desktop)
+
+### **Pré-requisitos:**
+- Python 3.8+
+- pip
+
+### **Instalação:**
 ```bash
-git clone [URL_DO_REPOSITÓRIO]
-cd [NOME_DO_DIRETÓRIO]
-```
+# Clonar repositório
+git clone <repositorio>
+cd btc
 
-2. Instale as dependências:
-```bash
+# Instalar dependências
 pip install -r requirements.txt
+
+# Executar
+python run_collector.py
 ```
 
-3. Configure as variáveis de ambiente (opcional):
+## 🔧 Configuração
+
+### **Variáveis de Ambiente (Opcional):**
 ```bash
-cp .env.example .env
-# Edite o arquivo .env com suas credenciais (apenas se necessário)
+# .env
+USE_BINANCE_US=False  # True para Binance.US
+LOG_LEVEL=INFO        # DEBUG, INFO, WARNING, ERROR
 ```
 
-## ⚙️ Configuração
+## 📊 Uso
 
-O arquivo `.env` é opcional. Só é necessário se você quiser usar funcionalidades que requerem API key:
-
-```env
-BINANCE_API_KEY=sua_api_key
-BINANCE_SECRET=sua_api_secret
-USE_BINANCE_US=False  # True para usar Binance.US como fallback
-```
-
-## 🎯 Uso
-
-### Coleta de Dados Completa
-
-```python
-from src.market_data_collector import MarketDataCollector
-
-# Inicializa o coletor
-collector = MarketDataCollector()
-
-# Coleta dados (inclui WebSocket de liquidações automaticamente)
-market_data = collector.collect_market_data()
-
-# Salva em arquivo
-collector.save_to_file(market_data, 'market_data.json')
-```
-
-### Teste do WebSocket de Liquidações
-
-```bash
-python test_websocket.py
-```
-
-### Executando o Coletor Principal
-
+### **Coleta Simples:**
 ```bash
 python run_collector.py
 ```
 
-### Executando os Testes
-
+### **Interface Web:**
 ```bash
-pytest tests/
+python web_collector.py
+# Acesse: http://localhost:8080
 ```
 
-## 📊 Estrutura do JSON de Saída
+### **Descobrir IP para Celular:**
+```bash
+python get_ip.py
+```
+
+## 📁 Estrutura do Projeto
+
+```
+btc/
+├── src/
+│   ├── collectors/
+│   │   ├── base_collector.py           # Classe base
+│   │   ├── binance_futures_collector.py # Coletor principal
+│   │   └── websocket_liquidations.py   # WebSocket liquidações
+│   ├── indicators/
+│   │   └── technical_indicators.py     # Indicadores técnicos
+│   ├── config.py                       # Configurações
+│   └── market_data_collector.py        # Orquestrador
+├── tests/
+│   └── test_market_data.py            # Testes automatizados
+├── run_collector.py                   # Script principal
+├── web_collector.py                   # Interface web
+├── get_ip.py                         # Descobrir IP local
+├── requirements.txt                   # Dependências
+└── README.md                         # Documentação
+```
+
+## 🔍 Exemplo de Saída JSON
 
 ```json
 {
-  "timestamp": "2024-03-16T03:15:22Z",
+  "timestamp": "2025-06-16T01:20:42.903843+00:00",
   "symbol": "BTCUSDT",
-  "current_price": 105448.66,
-  
+  "current_price": 105113.46,
   "order_book": {
     "top": {
-      "bids": [[price, qty], ...],
-      "asks": [[price, qty], ...]
+      "bids": [[105100.00, 7.057], [105099.90, 0.002]],
+      "asks": [[105100.10, 9.263], [105100.20, 0.035]]
     },
     "depth_pct": {
-      "bids": {"0.5": 8.4, "1": 14.2, "2": 27.8},
-      "asks": {"0.5": 10.1, "1": 16.5, "2": 33.0}
+      "bids": {"0.5": 113.59, "1.0": 113.59, "2.0": 113.59},
+      "asks": {"0.5": 147.92, "1.0": 147.92, "2.0": 147.92}
     },
-    "imbalance_pct": 15.2
+    "imbalance_pct": -13.1
   },
-  
   "derivatives": {
-    "open_interest_usd": 2.65e10,
-    "open_interest_coin": 251000,
-    "oi_change_4h_pct": -2.3,
-    "funding_rate": 0.00012,
-    "funding_next": "2024-03-16T04:00:00Z"
+    "open_interest_usd": 8250000000,
+    "open_interest_btc": 78450,
+    "oi_change_4h_pct": -0.79,
+    "funding_rate": 0.0005,
+    "next_funding_time": "2025-06-16T08:00:00+00:00"
   },
-  
   "stats": {
-    "volume_24h": 6.28e10,
-    "taker_buy_vol_24h": 3.11e10,
-    "taker_sell_vol_24h": 3.17e10
+    "volume_24h": 8460000000,
+    "taker_buy_vol_24h": 4230000000,
+    "taker_sell_vol_24h": 4230000000
   },
-  
   "liquidations": {
-    "long_liqs_24h": 1500000,
-    "short_liqs_24h": 2300000,
-    "total_liqs_24h": 3800000
+    "long_liqs_24h": 0.0,
+    "short_liqs_24h": 0.0,
+    "total_liqs_24h": 0.0
   },
-  
   "flow": {
-    "perp_cvd": -500000,
-    "spot_cvd": 200000,
-    "perp_buy_volume_sample": 1000000,
-    "perp_sell_volume_sample": 1500000,
-    "spot_buy_volume_sample": 800000,
-    "spot_sell_volume_sample": 600000
+    "perp_cvd": 2210000,
+    "spot_cvd": 305940,
+    "perp_buy_vol": 3850000,
+    "perp_sell_vol": 1640000,
+    "spot_buy_vol": 592010,
+    "spot_sell_vol": 286080
   },
-  
   "timeframes": {
     "15m": {
-      "candles": [[open, high, low, close, volume, timestamp], ...],
+      "candles": [...],
       "indicators": {
-        "sma": {"sma_20": 105000, "sma_50": 104500, "sma_200": null},
-        "ema": {"ema_9": 105100, "ema_21": 104800, "ema_50": 104600},
-        "rsi": {"rsi_14": 65.5},
-        "macd": {"macd": 150.2, "macd_signal": 120.1, "macd_hist": 30.1},
-        "bollinger": {"bb_upper": 106000, "bb_middle": 105000, "bb_lower": 104000, "bb_width": 0.019},
-        "atr": {"atr": 250.5}
+        "sma_20": 105109.29,
+        "sma_50": 105307.86,
+        "ema_9": 105269.82,
+        "rsi_14": 45.13,
+        "macd": {"macd": 20.72, "signal": 13.50, "histogram": 7.22},
+        "bollinger": {"upper": 105767.64, "middle": 105109.29, "lower": 104450.94},
+        "atr_14": 248.62
       }
-    },
-    "1h": {...},
-    "4h": {...},
-    "1d": {...}
+    }
   }
 }
 ```
 
-## 🔄 Rate Limiting
+## 🧪 Testes
 
-O sistema implementa um mecanismo de retry exponencial para lidar com rate limits da API:
+```bash
+# Executar testes
+python -m pytest tests/ -v
 
-- Backoff inicial: 1 segundo
-- Backoff máximo: 32 segundos
-- Máximo de tentativas: 3
+# Teste específico
+python -m pytest tests/test_market_data.py -v
+```
 
-## 🌐 WebSocket de Liquidações
+## 📈 Monitoramento
 
-### Vantagens:
-- **📡 Tempo real**: Liquidações processadas instantaneamente
-- **🆓 Gratuito**: Não requer API key
-- **🔄 Auto-reconexão**: Reconecta automaticamente se desconectar
-- **📊 Precisão**: Dados mais precisos que polling da API REST
+### **Logs:**
+- Conexão WebSocket em tempo real
+- Rate limiting e backoffs
+- Fallbacks automáticos
+- Métricas de performance
 
-### Como funciona:
-1. Conecta ao WebSocket público: `wss://fstream.binance.com/ws/!forceOrder@arr`
-2. Filtra liquidações do símbolo BTCUSDT
-3. Acumula valores por 24h (reseta automaticamente)
-4. Fallback para API REST se WebSocket falhar
+### **Métricas:**
+- Latência de coleta
+- Taxa de sucesso das APIs
+- Uptime do WebSocket
+- Volume de dados processados
 
-## 📝 Licença
+## 🔧 Troubleshooting
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+### **WebSocket desconectado:**
+- Verifique conexão com internet
+- Logs mostrarão tentativas de reconexão
 
-## 🤝 Contribuindo
+### **Rate limiting:**
+- Sistema tem backoff automático
+- Aguarde alguns segundos
 
-1. Faça um Fork do projeto
-2. Crie uma Branch para sua Feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a Branch (`git push origin feature/AmazingFeature`)
+### **Dados faltando:**
+- Campos opcionais são removidos quando indisponíveis
+- Verifique logs para detalhes
+
+## 📄 Licença
+
+MIT License - veja LICENSE para detalhes.
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
 5. Abra um Pull Request
 
-## 📧 Contato
+---
 
-Seu Nome - [@seu_twitter](https://twitter.com/seu_twitter) - email@exemplo.com
-
-Link do Projeto: [https://github.com/seu-usuario/btc-analysis](https://github.com/seu-usuario/btc-analysis) 
+**Desenvolvido com ❤️ para traders e desenvolvedores** 
