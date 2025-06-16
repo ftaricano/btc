@@ -20,26 +20,31 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# Ambiente virtual
 venv/
-env/
 ENV/
+env/
 
-# IDE
+# IDEs
 .idea/
 .vscode/
 *.swp
 *.swo
 
+# Arquivos de ambiente
+.env
+.env.*
+!.env.example
+
 # Arquivos de dados
-*.csv
 *.json
-*.db
-*.sqlite3
+!package.json
+!package-lock.json
 
 # Logs
 *.log
+logs/
 
-# Arquivos do sistema
+# Sistema
 .DS_Store
 Thumbs.db 
