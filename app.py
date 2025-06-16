@@ -12,8 +12,12 @@ st.set_page_config(
     layout="wide"
 )
 
-# Cache para a análise
-def get_analysis(force_refresh=False):
+# Limpa qualquer cache existente
+if hasattr(st, 'cache_data'):
+    st.cache_data.clear()
+
+def get_analysis():
+    """Sempre busca dados frescos sem cache"""
     analyzer = BTCAnalyzer()
     return analyzer.run_analysis()
 
@@ -26,9 +30,15 @@ Os dados são atualizados em tempo real e podem ser copiados para uso em outras 
 
 # Botão para atualizar análise
 if st.button("🔄 Atualizar Análise"):
+    # Limpa dados anteriores do session_state
+    if 'results' in st.session_state:
+        del st.session_state.results
+    if 'last_update' in st.session_state:
+        del st.session_state.last_update
+        
     with st.spinner("Realizando análise..."):
         try:
-            results = get_analysis(force_refresh=True)
+            results = get_analysis()
             st.session_state.results = results
             st.session_state.last_update = datetime.now()
             st.success("Análise atualizada com sucesso!")
